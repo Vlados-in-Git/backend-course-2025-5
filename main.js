@@ -43,7 +43,40 @@ const server = http.createServer(async (req, res) => {
     }
     return; 
   }
-  
+
+if (req.method === 'PUT') {
+   
+    const fileStream = fss.createWriteStream(filePath);
+
+   
+    fileStream.on('error', (err) => {
+        console.error(`PUT Error writing file ${filePath}:`, err);
+        if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'text/plain' });
+            res.end('Internal Server Error during file write.');
+        }
+    });
+
+    req.pipe(fileStream);
+
+    req.on('end', () => {
+     
+      if (!res.headersSent) {
+          res.writeHead(201, { 'Content-Type': 'text/plain' });
+          res.end('File created/replaced (201 Created)');
+      }
+    });
+
+    req.on('error', (err) => {
+        console.error('PUT Request error:', err);
+        fileStream.end(); // Закриваємо потік запису
+    });
+
+    return;
+  }
+
+
+
 
   res.writeHead(405, { 'Content-Type': 'text/plain' });
   res.end('Method Not Allowed');
