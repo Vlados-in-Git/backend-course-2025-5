@@ -1,33 +1,55 @@
- const { program } = require('commander');
- const fs = require('fs');
- const path = require('path');
- const http = require('http');
-
+const { program } = require('commander');
+const fs = require('fs').promises;
+const fss = require('fs');
+const path = require('path');
+const http = require('http');
 
 program
-	.requiredOption('-h, --host <host>', 'адреса сервера')
-	.requiredOption('-p, --port <port>', 'порт сервера')
-	.requiredOption('-c, --cache <path>', 'шлях до директорії з кешом');
+  .requiredOption('-h, --host <host>', 'адреса сервера')
+  .requiredOption('-p, --port <port>', 'порт сервера')
+  .requiredOption('-c, --cache <path>', 'шлях до директорії з кешом');
 
 program.parse(process.argv);
-
 const options = program.opts();
 const host = options.host;
 const port = options.port;
 const cacheDir = path.resolve(options.cache);
 
-if (!fs.existsSync(cacheDir)) {
-  console.log(`Директорія кешу не існує. Створюємо: ${cacheDir}`);
-  fs.mkdirSync(cacheDir, { recursive: true });
+if (!fss.existsSync(cacheDir)) {
+  console.log(`Директорія кешу не існує. Створюємо: ${cacheDir}`);  
+  fss.mkdirSync(cacheDir, { recursive: true });
 } else {
-  console.log(`Директорія кешу існує: ${cacheDir}`);
+  console.log(`Директорія кешу існує: ${cacheDir}`);  
 }
 
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end(`Сервер працює на ${host}:${port}\n`);
+const server = http.createServer(async (req, res) => {
+  // Змінні з шляхом та кодом картинки
+  const httpCode = req.url.slice(1);
+  const filePath = path.join(cacheDir, `${httpCode}.jpeg`);
+  
+  if (req.method === 'GET') {
+    try {
+      const imageData = await fs.readFile(filePath);
+      res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+      res.end(imageData);
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Not Found');  
+      } else {
+        res.writeHead(500, { 'Content-Type': 'text/plain' }); 
+        res.end('Internal Server Error');
+      }
+    }
+    return; 
+  }
+  
+
+  res.writeHead(405, { 'Content-Type': 'text/plain' });
+  res.end('Method Not Allowed');
 });
 
 server.listen(port, host, () => {
-  console.log(`Сервер запущено на http://${host}:${port}`);
+  console.log(`Сервер запущено на http://${host}:${port}`); 
+
 });
