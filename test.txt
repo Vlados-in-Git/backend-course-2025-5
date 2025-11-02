@@ -2,3 +2,7 @@ curl  -X GET http://localhost:3000/101 --output respond.jpeg
 
 curl -X PUT -T ./respond.jpeg http://localhost:3000/200 -i
 
+curl -X DELETE http://localhost:3000/2000 -i
+
+curl -X DELETE http://localhost:3000/200 -i
+

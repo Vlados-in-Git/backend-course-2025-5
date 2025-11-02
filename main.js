@@ -75,7 +75,25 @@ if (req.method === 'PUT') {
     return;
   }
 
-
+if (req.method === 'DELETE') {
+    try {
+      await fs.unlink(filePath); // Використання fs.promises.unlink
+      // Вимога: 200 OK
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('File deleted (200 OK)');
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        // Вимога: 404 Not Found
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('File not found (404 Not Found)');
+      } else {
+        console.error('DELETE Error:', error);
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('Internal Server Error');
+      }
+    }
+    return;
+  }
 
 
   res.writeHead(405, { 'Content-Type': 'text/plain' });
